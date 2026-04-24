@@ -24,7 +24,6 @@ jobs:
             --format sarif
             --output after.sarif
             ./
-        continue-on-error: true
 
       - name: checkout baseline commit
         run: |
@@ -46,7 +45,6 @@ jobs:
             --new-sarif after.sarif
             --old-sarif before.sarif
             --output diff.sarif
-        continue-on-error: true
 
       - name: save report
         uses: actions/upload-artifact@v4
@@ -67,7 +65,8 @@ jobs:
       - name: run semgrep
         run: |
           semgrep --config .semgrep --sarif --output semgrep.sarif \
-            --baseline-commit ${{ github.event.pull_request.base.sha }}
+            --baseline-commit ${{ github.event.pull_request.base.sha }} \
+            --error
 
       - name: save report
         uses: actions/upload-artifact@v4
