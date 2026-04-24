@@ -57,7 +57,7 @@ public class SecurityConfiguration {
         
         UserDetails guest = User.builder()
             .username("guest")
-            .password("{bcrypt}$2a$10$7QywXXcYVVfbL/0mbrVAv..lwlcafMLOX9iT3T2BzJ6Pu.B2pqKt2")
+            .password("{bcrypt}$2a$10$7QywXXcYVVfbL/0mbrVAv..lwlcafMLOX9iT3T2BzJ6Pu.B2pqKt")
             .roles("GUEST")
             .build();
 
