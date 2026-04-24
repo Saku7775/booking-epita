@@ -1,0 +1,76 @@
+name: pull-request
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  actions: read
+  security-events: write
+  contents: read
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: run osv-scanner after PR
+        uses: google/osv-scanner-action/osv-scanner-action@c51854704019a247608d928f370c98740469d4b5
+        with:
+          scan-args: |-
+            --format sarif
+            --output after.sarif
+            ./
+        continue-on-error: true
+
+      - name: checkout baseline commit
+        run: |
+          git checkout ${{ github.event.pull_request.base.sha }}
+
+      - name: run osv-scanner before PR
+        uses: google/osv-scanner-action/osv-scanner-action@c51854704019a247608d928f370c98740469d4b5
+        with:
+          scan-args: |-
+            --format sarif
+            --output before.sarif
+            ./
+        continue-on-error: true
+
+      - name: compare analysis
+        uses: google/osv-scanner-action/osv-reporter-action@c51854704019a247608d928f370c98740469d4b5
+        with:
+          scan-args: |-
+            --new-sarif after.sarif
+            --old-sarif before.sarif
+            --output diff.sarif
+        continue-on-error: true
+
+      - name: save report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependencies-report
+          path: diff.sarif
+
+  source-code:
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: run semgrep
+        run: |
+          semgrep --config .semgrep --sarif --output semgrep.sarif \
+            --baseline-commit ${{ github.event.pull_request.base.sha }}
+
+      - name: save report
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep.sarif
